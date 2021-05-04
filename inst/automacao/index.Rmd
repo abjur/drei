@@ -1,0 +1,79 @@
+---
+title: "Mapa de Empresas"
+subtitle: "Automação: rascunho"
+author: 
+  - name: "Associação Brasileira de Jurimetria - ABJ"
+    logo: assets/img/abj.png
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+documentclass: report
+bibliography: [assets/bib/book.bib, assets/bib/packages.bib]
+biblio-style: apalike
+link-citations: yes
+fontsize: '12pt'
+colorlinks: yes 
+toc-title: "Sumário"
+site: bookdown::bookdown_site
+description: "Relatório sobre o Mapa de Empresas."
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  message = FALSE, 
+  comment = FALSE, 
+  warning = FALSE, 
+  fig.height = 6, 
+  fig.width = 9
+)
+
+library(magrittr)
+library(redesim)
+library(drei)
+
+quad_atual <- lubridate::floor_date(Sys.Date(), "3 month")
+quad_anterior <- quad_atual - months(4)
+lab_atual <- stringr::str_glue("{(lubridate::month(quad_atual)-1)%/%4+1}º quadrimestre de {lubridate::year(quad_atual)}")
+lab_anterior <- stringr::str_glue("{(lubridate::month(quad_anterior)-1)%/%4+1}º quadrimestre de {lubridate::year(quad_anterior)}")
+
+
+da_atual <- redesim::redesim_min %>% 
+  dplyr::filter(
+    ano_mes <= quad_atual,
+    ano_mes > quad_anterior
+  ) %>% 
+  dplyr::select(-qtde_hh_viabilidade_nome, -qtde_hh_viabilidade_total) %>% 
+  tidyr::pivot_longer(dplyr::starts_with("qtde")) %>% 
+  dplyr::group_by(ano_mes, municipio, uf) %>% 
+  dplyr::summarise(
+    n = dplyr::n(),
+    total = sum(value),
+    total_viabilidade = sum(value[name == "qtde_hh_viabilidade_end"]),
+    total_abertura = sum(value[name != "qtde_hh_viabilidade_end"]),
+    .groups = "drop"
+  )
+
+da_anterior <- redesim::redesim_min %>% 
+  dplyr::filter(
+    ano_mes <= quad_anterior,
+    ano_mes > quad_anterior - months(4)
+  ) %>% 
+  dplyr::select(-qtde_hh_viabilidade_nome, -qtde_hh_viabilidade_total) %>% 
+  tidyr::pivot_longer(dplyr::starts_with("qtde")) %>% 
+  dplyr::group_by(ano_mes, municipio, uf) %>% 
+  dplyr::summarise(
+    n = dplyr::n(),
+    total = sum(value),
+    total_viabilidade = sum(value[name == "qtde_hh_viabilidade_end"]),
+    total_abertura = sum(value[name != "qtde_hh_viabilidade_end"]),
+    .groups = "drop"
+  )
+
+aux_uf <- abjData::muni %>% 
+  dplyr::distinct(uf_nm, uf_sigla, regiao_nm)
+```
+
+\pagebreak
+
+# Sobre este documento {-}
+
+O relatório foi produzido em *RMarkdown*. Todos os gráficos produzidos pela ABJ são reprodutíveis, ou seja, qualquer pessoa interessada em verificar a metodologia e os algoritmos utilizados pode fazê-lo. O relatório foi gerado com o software estatístico R na versão `r paste(version$major, version$minor, sep = ".")`.

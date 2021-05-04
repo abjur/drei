@@ -1,0 +1,157 @@
+# Dados gerais de tempo de abertura de empresas {#tempos}
+
+(...)
+
+```{r uf-menor-numeros}
+tab_uf_anterior <- da_anterior %>% 
+  dplyr::group_by(uf) %>% 
+  dplyr::summarise(media = sum(total) / sum(n))
+
+tab_uf <- da_atual %>% 
+  dplyr::group_by(uf) %>% 
+  dplyr::summarise(media = sum(total) / sum(n)) %>% 
+  dplyr::inner_join(tab_uf_anterior, c("uf")) %>% 
+  dplyr::inner_join(aux_uf, c("uf" = "uf_sigla")) %>% 
+  dplyr::arrange(media.x) %>% 
+  dplyr::mutate(
+    uf_nm, 
+    media = lab_hora(media.x), 
+    variacao = lab_hora(media.x - media.y)
+  )
+
+primeiro <- tab_uf$uf_nm[1]
+primeiro_tempo <- tab_uf$media[1]
+primeiro_var <- tab_uf$variacao[1]
+primeiro_var_sinal <- dplyr::if_else(
+  stringr::str_detect(primeiro_var, "\\-"), "menos", "mais"
+)
+
+menor_60_horas <- tab_uf %>% 
+  dplyr::slice(-c(1:5)) %>% 
+  dplyr::filter(media.x < 60) %>% 
+  with(paste(uf_nm, collapse = ", ")) %>% 
+  stringr::str_replace(",(?=[^,]*$)", " e")
+
+menor_72_horas <- tab_uf %>% 
+  dplyr::slice(-c(1:5)) %>% 
+  dplyr::filter(media.x >= 60, media.x <= 72) %>% 
+  with(paste(uf_nm, collapse = ", ")) %>% 
+  stringr::str_replace(",(?=[^,]*$)", " e")
+
+maior_72_horas <- tab_uf %>% 
+  dplyr::slice(-c(23:27)) %>% 
+  dplyr::filter(media.x >= 72) %>% 
+  with(paste(uf_nm, collapse = ", ")) %>% 
+  stringr::str_replace(",(?=[^,]*$)", " e")
+
+ultimo <- tab_uf$uf_nm[27]
+ultimo_tempo <- tab_uf$media[27]
+ultimo_var <- tab_uf$variacao[27]
+ultimo_var_sinal <- dplyr::if_else(
+  stringr::str_detect(ultimo_var, "\\-"), "menos", "mais"
+)
+```
+
+Abaixo, os estados que apresentaram os menores tempos para abertura de empresas no `r lab_atual`. Destaca-se o estado de `r primeiro` como a unidade da federação mais rápida para se abrir empresas, apresentando o tempo de `r primeiro_tempo` ao final do `r lab_atual`. A unidade federativa registrou `r primeiro_var` a `r primeiro_var_sinal` em relação ao quadrimestre anterior, sendo a unidade federativa mais rápida para se formalizar novas empresas.
+
+```{r uf-menor}
+tab_uf %>% 
+  utils::head(5) %>% 
+  dplyr::select(uf_nm, media, variacao) %>% 
+  purrr::set_names(c(
+    "Estado",
+    "Tempo médio de aberturas de empresas",
+    paste0("Variação em relação ao ", lab_anterior)
+  )) %>% 
+  knitr::kable(
+    caption = paste0(
+      "Estados com menores tempos de abertura de empresas no ", 
+      lab_atual
+    )
+  )
+```
+
+Além dos estados listados acima, `r menor_60_horas` possibilitam a abertura de novos negócios em até 60 horas. `r menor_72_horas` possuem tempos de abertura de empresas na faixa de 60 e 72 horas.
+
+Os estados `r maior_72_horas` estão abrindo empresas com tempo acima de 3 dias, bem como os estados listados abaixo, que apresentaram os maiores tempos de abertura de empresas no `r lab_atual`. Destaca-se a `r ultimo` como o estado mais demorado para se abrir empresa, com `r ultimo_tempo`. O estado variação de `r ultimo_var` para `r ultimo_var_sinal` em relação ao quadrimestre anterior.
+
+```{r uf-maior}
+tab_uf %>% 
+  utils::tail(5) %>% 
+  dplyr::select(uf_nm, media, variacao) %>% 
+  purrr::set_names(c(
+    "Estado",
+    "Tempo médio de aberturas de empresas",
+    paste0("Variação em relação ao ", lab_anterior)
+  )) %>% 
+  knitr::kable(
+    caption = paste0(
+      "Estados com maiores tempos de abertura de empresas no ", 
+      lab_atual
+    )
+  )
+```
+
+(...)
+
+<!-- No recorte geográfico, verificou-se que o Centro-Oeste, mais uma vez, é a região que apresenta o menor tempo para abertura de empresa (1 dia e 10 horas), porém com aumento de 5 horas (17,2%) em relação ao segundo quadrimestre de 2020. Quando comparado com o final de 2019, houve redução de 1 dia e 7 horas (47,7%). Destaca-se ainda que as quatro unidades federativas da região abrem novos negócios em até 2 dias, abaixo da média nacional. -->
+
+<!-- Por outro lado, a região Nordeste apresentou o maior tempo para abertura de empresas (3 dias e 19 horas), o que ainda representou uma diminuição de 6 horas (6,2%) em relação ao segundo quadrimestre deste ano e 2 dias e 10 horas (38,9%) quando comparado com o terceiro quadrimestre de 2019. -->
+
+```{r regiao, eval=FALSE}
+
+knitr::kable(
+  caption = "Tempo médio de abertura de empresas por região do País no terceiro quadrimestre de 2020."
+)
+
+```
+
+<!-- Entre as capitais brasileiras, Curitiba se destaca como a mais rápida para se abrir empresa, com tempo de abertura de 22 horas. A capital do Paraná avançou não só pela significativa melhoria nas análises de registro efetuadas pela Junta Comercial do Estado, mas também pela agilidade nas análises dos pedidos de viabilidade no munícipio, maior parte dessas sendo realizadas de forma automática. Macapá e Goiânia, ambas com 1 dia e 1 hora, também se destacam nos tempos de abertura. -->
+
+```{r capital-menor, eval=FALSE}
+knitr::kable(
+  caption = "Capitais com menores tempos de abertura de empresas no terceiro quadrimestre de 2020."
+)
+```
+
+```{r capital-maior, eval=FALSE}
+knitr::kable(
+  caption = "Capitais com maiores tempos de abertura de empresas no terceiro quadrimestre de 2020."
+)
+```
+
+<!-- Por outro lado, Salvador ainda registra o tempo mais alto entre as capitais (8 dias e 17 horas). Porém o município, que chegou a registrar abertura de novos negócios em 31 dias no final do primeiro quadrimestre de 2020, vem apresentando sensível redução no tempo nos últimos meses. -->
+
+<!-- A cidade se destoava das demais capitais pois tinha um fluxo diferente das outras capitais para pedidos de viabilidade. Era necessário pedido de viabilidade de endereço e pagamento de taxa ao município antes de seguir para demais etapas. A Prefeitura esperava a compensação bancária da taxa, para então aprovar o pedido e possibilitar ao empreendedor prosseguir com a solicitação na Junta Comercial e na Receita Federal. Neste contexto, a Junta Comercial do Estado da Bahia envidou esforços para integração da capital com o órgão e realizará os trabalhos necessários para que as respostas sejam realizadas de forma imediata para o empreendedor, possibilitando agilidade e simplificação ao processo. -->
+
+<!-- A seguir os municípios que apresentaram os menores e os maiores tempos de abertura de empresas no terceiro quadrimestre de 2020[^foot]. Destaca-se o município de Santa Fé do Sul (SP) como o mais rápido para se abrir empresas, onde foram abertas empresas em 3 horas e 24 minutos. Na contramão está o município de Senhor do Bonfim (BA), que apresentou o maior tempo de abertura de empresas: 15 dias e 7 horas. -->
+
+<!-- [^foot]: Foram considerados apenas municípios com mais de vinte mil habitantes (conforme o art. 182 da Constituição Federal, esses municípios são obrigados a elaborar plano diretor) que estão integrados à Rede Nacional para a Simplificação do Registro e da Legalização de Empresas e Negócios – REDESIM e que registraram ao menos 10 empresas abertas (exceto MEI) no último mês de avaliação do Boletim. -->
+
+```{r muni-menor-abertura, eval=FALSE}
+knitr::kable(
+  caption = "Municípios com menores tempos de abertura de empresas no terceiro quadrimestre de 2020."
+)
+```
+
+```{r muni-maior-abertura, eval=FALSE}
+knitr::kable(
+  caption = "Municípios com maiores tempos de abertura de empresas no terceiro quadrimestre de 2020."
+)
+```
+
+<!-- A relação das tabelas a seguir apresenta os menores e os maiores tempos relativos à análise de viabilidade de endereço (fase na qual o município informa se a atividade econômica pretendida pode ser exercida no local selecionado) no terceiro quadrimestre de 2020. Destaca-se o município de Sarandi (PR) como o mais rápido para analisar consultas de viabilidade, com o tempo de 53 minutos. Na contramão está o município de Navegantes (SC), que apresentou o maior tempo relativo à etapa de viabilidade: 14 dias e 10 horas. -->
+
+<!-- Importante destacar também o município de São Paulo aparece no segundo lugar do ranking nacional. O Município realiza respostas aos usuários de serviços quanto à etapa de viabilidade em 1 dia e 17 horas, seguido por São José dos Campos, que realiza as respostas em 1 hora e 42 minutos. -->
+
+```{r muni-menor-endereco, eval=FALSE}
+knitr::kable(
+  caption = "Municípios com menores tempos de viabilidade no terceiro quadrimestre de 2020."
+)
+```
+
+```{r muni-maior-endereco, eval=FALSE}
+knitr::kable(
+  caption = "Municípios com maiores tempos de viabilidade no terceiro quadrimestre de 2020."
+)
+```
