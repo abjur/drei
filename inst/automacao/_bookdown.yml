@@ -1,6 +1,6 @@
 book_filename: mapa_empresas
 delete_merged_file: true
-output_dir: relatorio
+output_dir: ../../docs
 language:
   label:
     fig: "Figura "
